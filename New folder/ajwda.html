@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Navigation Arrow</title>
+
+    <!-- ✅ Makes it mobile friendly -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        body {
+            text-align: center;
+            background: #111;
+            color: white;
+            font-family: Arial;
+        }
+
+        #compass {
+            width: 250px;
+            height: 250px;
+            border: 5px solid white;
+            border-radius: 50%;
+            margin: 50px auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        #arrow {
+            font-size: 80px;
+            transition: transform 0.1s linear;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Navigation Arrow</h2>
+
+<div id="compass">
+    <div id="arrow">↑</div>
+</div>
+
+<p id="info">Tap Start</p>
+
+<!-- ✅ REQUIRED for iPhone -->
+<button onclick="startCompass()">Start</button>
+
+<script>
+let userLat = 0;
+let userLng = 0;
+let heading = 0;
+
+// 📍 TARGET LOCATION (you can change this)
+const targetLat = 14.5995;
+const targetLng = 120.9842;
+
+// ✅ Start everything after button click (important for mobile)
+function startCompass() {
+
+    // GPS
+    navigator.geolocation.watchPosition(position => {
+        userLat = position.coords.latitude;
+        userLng = position.coords.longitude;
+
+        document.getElementById("info").innerText =
+            "Lat: " + userLat.toFixed(5) +
+            " Lng: " + userLng.toFixed(5);
+    });
+
+    // iPhone permission
+    if (typeof DeviceOrientationEvent.requestPermission === "function") {
+        DeviceOrientationEvent.requestPermission()
+            .then(state => {
+                if (state === "granted") {
+                    window.addEventListener("deviceorientation", updateArrow);
+                } else {
+                    alert("Permission denied");
+                }
+            });
+    } else {
+        // Android
+        window.addEventListener("deviceorientation", updateArrow);
+    }
+}
+
+// Arrow update
+function updateArrow(event) {
+    if (event.alpha === null) return;
+
+    heading = event.alpha;
+
+    let bearing = getBearing(userLat, userLng, targetLat, targetLng);
+    let rotation = bearing - heading;
+
+    document.getElementById("arrow").style.transform =
+        `rotate(${rotation}deg)`;
+}
+
+// Bearing calculation
+function getBearing(lat1, lon1, lat2, lon2) {
+    let dLon = (lon2 - lon1) * Math.PI / 180;
+
+    lat1 = lat1 * Math.PI / 180;
+    lat2 = lat2 * Math.PI / 180;
+
+    let y = Math.sin(dLon) * Math.cos(lat2);
+    let x = Math.cos(lat1) * Math.sin(lat2) -
+            Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+
+    let brng = Math.atan2(y, x) * 180 / Math.PI;
+    return (brng + 360) % 360;
+}
+</script>
+
+</body>
+</html>
